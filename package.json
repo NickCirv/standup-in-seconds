@@ -1,0 +1,10 @@
+{
+  "name": "standup-in-seconds",
+  "version": "1.0.0",
+  "description": "Turn your git log into a standup update in seconds. No more 'uh... I worked on stuff'.",
+  "type": "module",
+  "bin": { "standup": "./index.js" },
+  "keywords": ["git", "standup", "productivity", "cli", "developer-tools"],
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}

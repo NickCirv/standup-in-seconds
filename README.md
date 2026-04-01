@@ -1,3 +1,5 @@
+![Banner](banner.svg)
+
 # standup-in-seconds
 
 Your standup is in your git log. Stop pretending it isn't.

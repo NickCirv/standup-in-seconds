@@ -1,49 +1,71 @@
-![Banner](banner.svg)
+![standup-in-seconds — turn your git log into a standup update in seconds, zero config](assets/banner.png)
 
-# standup-in-seconds
+<div align="center">
 
-Your standup is in your git log. Stop pretending it isn't.
+**Your standup is in your git log. Stop pretending it isn't.**
 
-```bash
-cd your-project && node /path/to/standup-in-seconds/index.js
-```
+![license](https://img.shields.io/badge/license-MIT-blue?labelColor=0B0A09)
+![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?labelColor=0B0A09)
+![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?labelColor=0B0A09)
+![formats](https://img.shields.io/badge/output%20formats-5-8B92F6?labelColor=0B0A09)
 
-*Yesterday: Fixed auth bug in login flow, Refactored user service*
-*Today: Continuing API rate limiting work*
-*Blockers: None*
-
-Zero config. Zero API keys. Works from any git repo. Reads your commits, detects WIP, formats for wherever your standup lives.
+</div>
 
 ---
 
+`standup-in-seconds` reads your git log, detects WIP from `git status`, scans for TODO comments, deduplicates similar commits, and formats everything for wherever your standup lives — in under a second.
+
+```
+Yesterday
+- Fixed auth token expiry in login flow
+- Refactored user service to use dependency injection
+
+Today
+- Continuing work on feature/rate-limiting
+- In progress: src/middleware/rateLimit.js
+
+Blockers
+- None
+
+// Generated from 2 commits on feature/rate-limiting branch in myproject by Jane Doe
+```
+
 ## Install
 
-```bash
-# Run directly
-node index.js
+Not on npm — runs straight from GitHub with zero dependencies:
 
-# Or install globally
-npm install -g standup-in-seconds
-standup
+```bash
+npx github:NickCirv/standup-in-seconds
 ```
 
 ## Usage
 
-```
-node index.js [options]
+```bash
+# default plain text standup
+npx github:NickCirv/standup-in-seconds
 
-OPTIONS:
-  --format     Output format: slack | teams | plain | jira | clipboard
-               Default: plain
-  --since      Time window (git date syntax)
-               Default: "24 hours ago" (auto-extends to 2 days if no results)
-  --author     Filter by author name
-               Default: your git config user.name
-  --clipboard  Copy to clipboard (pbcopy on mac, xclip on linux)
-  --help       Show help
+# Slack format, copy to clipboard
+npx github:NickCirv/standup-in-seconds --format slack --clipboard
+
+# look back 3 days
+npx github:NickCirv/standup-in-seconds --since "3 days ago"
+
+# another author's standup
+npx github:NickCirv/standup-in-seconds --author "Jane Doe"
+
+# Jira wiki markup
+npx github:NickCirv/standup-in-seconds --format jira
 ```
 
-## Format Examples
+| Flag | Description |
+|------|-------------|
+| `--format <name>` | Output format: `slack` \| `teams` \| `plain` \| `jira` \| `clipboard` (default: `plain`) |
+| `--since <date>` | git date syntax, e.g. `"3 days ago"`, `"2024-01-01"` (default: `"24 hours ago"`) |
+| `--author <name>` | Filter by author name (default: your `git config user.name`) |
+| `--clipboard` | Copy output to clipboard (`pbcopy` on macOS, `xclip`/`xsel` on Linux) |
+| `--help` | Show help |
+
+## Output formats
 
 ### Slack (`--format slack`)
 ```
@@ -87,33 +109,24 @@ OPTIONS:
 // Generated from 2 commits on feature/rate-limiting branch in myproject by Jane Doe
 ```
 
-### Clipboard (`--format clipboard` or `--clipboard`)
-Copies plain-text version to clipboard automatically.
+## How it works
 
-## How It Works
-
-**Commits (Yesterday section)**
+**Yesterday section — git log**
 - Reads `git log --since="24 hours ago"` filtered to your author
 - Falls back to `--since="2 days ago"` automatically if nothing found
-- Parses conventional commit prefixes: `feat:`, `fix:`, `refactor:`, `docs:`, etc.
-- Deduplicates similar messages with fuzzy matching (80% similarity threshold)
+- Parses conventional commit prefixes (`feat:`, `fix:`, `refactor:`, `docs:`, etc.) into human-readable verbs
+- Deduplicates similar messages using 80% fuzzy similarity — so `fix: auth` and `fix auth bug` merge into one
 - Groups multi-branch work when commits span multiple branches
 
-**WIP Detection (Today section)**
-- `git status --porcelain` for staged + modified files
+**Today section — WIP detection**
+- `git status --porcelain` for staged and modified files (filters out `node_modules`, lock files, map files)
 - `git stash list` for stashed work
-- Filters out noise (node_modules, lock files, map files)
+- Scans recently changed files for `TODO:` comments and `BLOCKED:` markers
 
-**TODO Scanning**
-- Scans recently changed files for `TODO:` comments
-- Detects `BLOCKED:` TODOs and surfaces them as blockers
+## Conventional commit mapping
 
-## Smart Grouping
-
-Conventional commits are automatically mapped to human-readable verbs:
-
-| Prefix | Output |
-|--------|--------|
+| Prefix | Output verb |
+|--------|-------------|
 | `feat:` | Built |
 | `fix:` | Fixed |
 | `refactor:` | Refactored |
@@ -122,40 +135,24 @@ Conventional commits are automatically mapped to human-readable verbs:
 | `chore:` | Maintenance: |
 | `perf:` | Improved performance of |
 
-No prefix? The message is used as-is (capitalised).
+No prefix? The commit message is used as-is (capitalised).
 
-## Edge Cases
+## Edge cases handled
 
-- **No commits yesterday**: Outputs a friendly message instead of an empty section
-- **Not a git repo**: Clear error with a sarcastic note
-- **Multiple branches**: Groups and notes branches worked across
-- **Duplicate commits**: Merges similar messages with a count (x2, x3)
+- **No commits found**: outputs a friendly message rather than an empty section
+- **Not a git repo**: clear error with instructions
+- **Multiple branches**: groups work across branches with a note
+- **Duplicate commits**: merges near-identical messages with a count (`x2`, `x3`)
+- **Windows clipboard**: falls back to `clip` automatically
 
-## Examples
+## What it is NOT
 
-```bash
-# Default plain text
-node index.js
+- **Not an AI standup generator.** No LLMs, no API keys, no cloud calls — it reads your commits, not your mind.
+- **Not a config file tool.** There is no `.standuprc`. If your commits describe your work, this tool works. If they don't, this tool will show you exactly that.
+- **Not a project management integration.** It formats text for Slack/Teams/Jira — it does not post to those tools or read from them.
 
-# Slack format, copy to clipboard
-node index.js --format slack --clipboard
+---
 
-# Look back 3 days
-node index.js --since "3 days ago"
-
-# Another author's standup
-node index.js --author "Jane Doe"
-
-# Jira wiki markup
-node index.js --format jira
-```
-
-## Philosophy
-
-No config files. No `.standuprc`. No API keys. No LLMs.
-
-Your commits already tell the story. This tool just formats it for whatever meeting platform your company insists on using.
-
-## License
-
-MIT
+<div align="center">
+<sub>Zero dependencies · Node 18+ · MIT · by <a href="https://github.com/NickCirv">NickCirv</a></sub>
+</div>

@@ -4,7 +4,10 @@
   "description": "Turn your git log into a standup update in seconds. No more 'uh... I worked on stuff'.",
   "type": "module",
   "bin": { "standup": "./index.js" },
+  "scripts": {
+    "test": "node --test"
+  },
   "keywords": ["git", "standup", "productivity", "cli", "developer-tools"],
   "license": "MIT",
-  "engines": { "node": ">=18" }
+  "engines": { "node": ">=20" }
 }
